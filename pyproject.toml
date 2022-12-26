@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "git-tag-bump"
+version = "0"
+description = ""
+authors = ["Dmitry Voronin <dimka665@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+typer = {extras = ["all"], version = ">=0.7"}
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+git-bump = "git_tag_bump:main"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+strict = true
+latest-tag = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
+build-backend = "poetry_dynamic_versioning.backend"
