@@ -11,6 +11,10 @@ class VersionPart(Enum):
     PATCH = 'patch'
 
 
+app = typer.Typer()
+
+
+@app.command()
 def bump(
     part: VersionPart = typer.Argument(VersionPart.MINOR.value),
     push: bool = typer.Option(False, '--push', help='Push tag to remote repository.'),
@@ -86,9 +90,5 @@ def bump(
         subprocess.check_call(['git', 'push', remote, new_tag])
 
 
-def main():
-    typer.run(bump)
-
-
 if __name__ == '__main__':
-    main()
+    app()

@@ -12,7 +12,7 @@ typer = {extras = ["all"], version = ">=0.7"}
 [tool.poetry.dev-dependencies]
 
 [tool.poetry.scripts]
-git-bump = "git_tag_bump:main"
+git-bump = "git_tag_bump:app"
 
 [tool.poetry-dynamic-versioning]
 enable = true
