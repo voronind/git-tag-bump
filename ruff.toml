@@ -1,0 +1,9 @@
+[lint]
+# Q - flake8-quotes
+extend-select = ["Q"]
+
+[lint.flake8-quotes]
+inline-quotes = "single"
+
+#[format]
+#quote-style = "single"
