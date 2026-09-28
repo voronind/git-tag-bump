@@ -1,9 +1,88 @@
+line-length = 120
+
 [lint]
-# Q - flake8-quotes
-extend-select = ["Q"]
+preview = true  # to enable RUF105 for ruff ignore comments
+explicit-preview-rules = true   # Prefix doesn't enable preview rules. You need use full id.
+# List of Rules: https://docs.astral.sh/ruff/rules
+extend-select = [
+    'ERA',      # eradicate (1 rule: commented-out-code)
+#    'FAST',     # FastAPI
+    'YTT',      # flake8-2020
+#    'ANN',      # flake8-annotations
+#    'ASYNC',    # flake8-async
+    'S',        # flake8-bandit
+    'BLE',        # flake8-blind-except (1 rule: blind-except)
+    'FBT',        # flake8-boolean-trap
+    'B',        # flake8-bugbear
+    'A',        # flake8-builtins
+    'COM',        # flake8-commas
+    'C',        # flake8-comprehensions and maccabe (1 rule: complex-structure)
+#    'CPY',        # flake8-copyright (1 rule: missing-copyright-notice)
+#    'DTZ',        # flake8-datetimez
+    'T',        # flake8-debugger (1 rule: debugger) and flake8-print (2 rules: print, p-print)
+#    'DJ',        # flake8-django
+    'EM',       # flake8-errmsg
+    'EXE',      # flake8-executable
+    'FIX',      # flake8-fixme
+    'FA',      # flake8-future-annotations
+    'INT',      # flake8-gettext
+    'ISC',      # flake8-implicit-str-concat
+    'ICN',      # flake8-import-conventions
+    'LOG',      # flake8-logging
+    'G',        # flake8-logging-format
+    'INP',      # flake8-no-pep420 (1 rule)
+    'PIE',      # flake8-pie
+    'PYI',      # flake8-pyi
+    'PT',      # flake8-pytest-style
+    'Q',        # flake8-quotes
+    'RET',      # flake8-return
+    'SLF',      # flake8-self (1 rule: 	private-member-access)
+    'SIM',      # flake8-simplify
+    'SLOT',      # flake8-slots
+    'TID',      # flake8-tidy-imports
+    'TD',      # flake8-todos
+    'TC',      # flake8-type-checking
+    'ARG',      # flake8-unused-arguments
+    'PTH',      # flake8-use-pathlib
+    'FLY',      # flynt (1 rule: static-join-to-f-string)
+    'I',        # isort (2 rules: unsorted-imports, missing-required-import)
+    'NPY',      # NumPy
+    'PD',       # pandas-vet
+    'N',        # pep8-naming
+    'PERF',     # Perflint
+    'E',        # pycodestyle
+    'W',        # pycodestyle
+    'DOC',      # pydoclint
+#    'D',        # pydocstyle
+    'F',        # pyflakes
+    'PGH',      # pygrep-hooks
+    'PLC',      # pylint
+    'PLE',      # pylint
+    'PLR',      # pylint
+    'PLW',      # pylint
+    'UP',       # pyupgrade
+    'FURB',     # refurb
+    'RUF',      # Ruff
+    'TRY',      # tryceratops
+]
+ignore = [
+    'subprocess-without-shell-equals-true',
+    'f-string-in-exception',
+    'raw-string-in-exception',
+    'raise-vanilla-args',
+    'boolean-positional-value-in-call',
+    'boolean-type-hint-positional-argument',
+]
+
+[lint.per-file-ignores]
+'tests/**' = [
+    'implicit-namespace-package',       # no __init__.py
+    'assert',
+]
 
 [lint.flake8-quotes]
-inline-quotes = "single"
+inline-quotes = 'single'
 
-#[format]
-#quote-style = "single"
+[format]
+quote-style = 'single'
+preview = true

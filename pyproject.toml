@@ -9,11 +9,14 @@ license = "MIT"
 
 requires-python = ">=3.10"
 dependencies = [
+    "dunamai ~= 1.26.2",
     "typer ~= 0.15",
 ]
 
 [dependency-groups]
-dev = []
+dev = [
+    "pytest>=9.1.1",
+]
 
 [project.scripts]
 git-bump = "git_tag_bump:app"

@@ -1,8 +1,10 @@
+#!/usr/bin/env python
 import subprocess
+from dataclasses import dataclass
 from enum import Enum
 
-from click.exceptions import ClickException
 import typer
+from typer._click import ClickException
 
 
 class VersionPart(Enum):
@@ -11,37 +13,54 @@ class VersionPart(Enum):
     PATCH = 'patch'
 
 
-app = typer.Typer()
+@dataclass(frozen=True, slots=True)
+class Version:
+    major: int = 0
+    minor: int = 0
+    patch: int = 0
+    prefix: str = 'v'
+
+    def __str__(self):
+        return f'{self.prefix}{self.major}.{self.minor}' + (f'.{self.patch}' if self.patch else '')
+
+    def bump(self, part: VersionPart):
+        match part:
+            case VersionPart.MAJOR:
+                return Version(self.major + 1, 0, 0, prefix=self.prefix)
+            case VersionPart.MINOR:
+                return Version(self.major, self.minor + 1, 0, prefix=self.prefix)
+            case VersionPart.PATCH:
+                return Version(self.major, self.minor, self.patch + 1, prefix=self.prefix)
+        raise ValueError('Incorrect bump')
+
+
+GIT_PATH = '/usr/bin/git'
+
+
+def git(args: list[str]):
+    return subprocess.check_call([GIT_PATH, args])
+
+
+def git_output(args: list[str], stderr=None):
+    return subprocess.check_output([GIT_PATH, *args], text=True, stderr=stderr).rstrip()
 
 
 def git_repo_is_in_dirty_state():
-    git_status_output = subprocess.check_output(['git', 'status', '--porcelain'], text=True)
-    for line in git_status_output.splitlines():
-        if not line.startswith('?? '):
-            return True
-    return False
+    git_status_output = git_output(['status', '--porcelain'])
+    return any(
+        not line.startswith('?? ')
+        for line in git_status_output.splitlines()
+    )
 
 
-def git_tag_version():
-    pass
-
-
-@app.command()
-def bump(
-    part: VersionPart = typer.Argument(VersionPart.MINOR.value),
-    push: bool = typer.Option(False, '--push', help='Push tag to remote repository.'),
-):
-    if git_repo_is_in_dirty_state():
-        raise ClickException('Git repository is in dirty state')
-
+def git_tag_version() -> Version:
     last_call_error = None
     for prefix in ['v', '']:
         try:
-            describe_output = subprocess.check_output(
-                ['git', 'describe', '--long', '--match', f'{prefix}[0-9]*.[0-9]*'],
+            describe_output = git_output(
+                ['describe', '--long', '--match', f'{prefix}[0-9]*.[0-9]*'],
                 stderr=subprocess.PIPE,
-                text=True,
-            ).rstrip()
+            )
             break
         except subprocess.CalledProcessError as error:
             last_call_error = error
@@ -49,8 +68,9 @@ def bump(
     else:
         raise ClickException(f'$ {" ".join(last_call_error.cmd)}\n{last_call_error.stderr.rstrip()}')
 
-    describe_output = describe_output[len(prefix):]
-    import re   # pylint: disable=import-outside-toplevel
+    describe_output_version = describe_output[len(prefix):]
+    import re  # ruff: ignore[import-outside-top-level]
+
     result = re.match(
         r"""
         (?P<version>
@@ -60,11 +80,11 @@ def bump(
         )
         -(?P<commit_number>\d+)
         -g[\da-f]+$""",
-        describe_output,
+        describe_output_version,
         re.VERBOSE,
     )
     if not result:
-        raise ClickException(f'Can not parse `git describe` output: {describe_output}')
+        raise ClickException(f'Can not parse `git describe` output: {describe_output_version}')
 
     group_dict = result.groupdict()
 
@@ -76,28 +96,43 @@ def bump(
     minor = int(group_dict['minor'])
     patch = int(group_dict.get('patch') or 0)
 
-    if part == VersionPart.MAJOR:
-        major += 1
-        minor = 0
-        patch = 0
-    elif part == VersionPart.MINOR:
-        minor += 1
-        patch = 0
-    elif part == VersionPart.PATCH:
-        patch += 1
+    return Version(major, minor, patch, prefix=prefix)
 
-    new_tag = f'{prefix}{major}.{minor}' + (f'.{patch}' if patch else '')
-    subprocess.check_call(['git', 'tag', '--annotate', '--message', 'Version', new_tag])
-    print(new_tag)
 
-    if push:
-        branch = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], text=True).rstrip()
-        try:
-            remote = subprocess.check_output(['git', 'config', f'branch.{branch}.remote'], text=True).rstrip()
-        except subprocess.CalledProcessError as error:
-            raise ClickException(f'Git branch `{branch}` has no remote') from error
+def git_tag_new_version(version: Version):
+    git(['tag', '--annotate', '--message', 'Version', str(version)])
 
-        subprocess.check_call(['git', 'push', remote, new_tag])
+
+app = typer.Typer()
+
+
+@app.command()
+def bump(
+    # ruff: ignore[function-call-in-default-argument]
+    part: VersionPart = typer.Argument(VersionPart.MINOR),
+    push: bool = typer.Option(False, '--push', help='Push tag to remote repository.'),
+    dry_run: bool = typer.Option(False),
+):
+    if git_repo_is_in_dirty_state():
+        raise ClickException('Git repository is in dirty state')
+
+    version = git_tag_version()
+    new_version = version.bump(part)
+    new_tag = str(new_version)
+
+    print(new_tag)  # ruff: ignore[print]
+    if not dry_run:
+        git_tag_new_version(version)
+        if push:
+            branch = git_output(['rev-parse', '--abbrev-ref', 'HEAD'])
+            try:
+                remote = git_output(['config', f'branch.{branch}.remote'])
+            except subprocess.CalledProcessError as error:
+                raise ClickException(f'Git branch `{branch}` has no remote') from error
+
+            git(['push', remote, new_tag])
+    else:
+        print('Dry run')    # ruff: ignore[print]
 
 
 if __name__ == '__main__':
