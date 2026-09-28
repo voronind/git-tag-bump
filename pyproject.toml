@@ -1,18 +1,25 @@
-[tool.poetry]
+[project]
 name = "git-tag-bump"
-version = "0"
+dynamic = ["version"]
 description = ""
-authors = ["Dmitry Voronin <dimka665@gmail.com>"]
+authors = [
+    {name = "Dmitry Voronin", email = "dimka665@gmail.com"},
+]
 license = "MIT"
 
-[tool.poetry.dependencies]
-python = "^3.8"
-typer = {extras = ["all"], version = ">=0.7"}
+requires-python = ">=3.10"
+dependencies = [
+    "typer ~= 0.15",
+]
 
-[tool.poetry.dev-dependencies]
+[dependency-groups]
+dev = []
 
-[tool.poetry.scripts]
+[project.scripts]
 git-bump = "git_tag_bump:app"
+
+[tool.uv]
+preview-features = ["centralized-project-envs"]
 
 [tool.poetry-dynamic-versioning]
 enable = true
@@ -20,6 +27,12 @@ vcs = "git"
 strict = true
 latest-tag = true
 
+[tool.hatch.version]
+source = "vcs"
+raw-options = {local_scheme = "no-local-version"}
+
 [build-system]
-requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
-build-backend = "poetry_dynamic_versioning.backend"
+#requires = ["poetry-core >= 1.0.0", "poetry-dynamic-versioning"]
+#build-backend = "poetry_dynamic_versioning.backend"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
