@@ -14,15 +14,25 @@ class VersionPart(Enum):
 app = typer.Typer()
 
 
+def git_repo_is_in_dirty_state():
+    git_status_output = subprocess.check_output(['git', 'status', '--porcelain'], text=True)
+    for line in git_status_output.splitlines():
+        if not line.startswith('?? '):
+            return True
+    return False
+
+
+def git_tag_version():
+    pass
+
+
 @app.command()
 def bump(
     part: VersionPart = typer.Argument(VersionPart.MINOR.value),
     push: bool = typer.Option(False, '--push', help='Push tag to remote repository.'),
 ):
-    git_status_output = subprocess.check_output(['git', 'status', '--porcelain'], text=True)
-    for line in git_status_output.splitlines():
-        if not line.startswith('?? '):
-            raise ClickException('Git repository is in dirty state')
+    if git_repo_is_in_dirty_state():
+        raise ClickException('Git repository is in dirty state')
 
     last_call_error = None
     for prefix in ['v', '']:
