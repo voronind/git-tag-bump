@@ -58,7 +58,7 @@ def bump(
     part: VersionPart = typer.Argument(VersionPart.MINOR),
     push: bool = typer.Option(False, '--push', '-p', help='Push tag to remote repository.'),
 ):
-    version = Version.from_git()
+    version = Version.from_git(ignore_untracked=True)
 
     if version.dirty:
         raise ClickException('Git repository is in dirty state')
