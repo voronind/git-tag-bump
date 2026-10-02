@@ -3,7 +3,7 @@ name = "git-tag-bump"
 dynamic = ["version"]
 description = ""
 authors = [
-    {name = "Dmitry Voronin", email = "dimka665@gmail.com"},
+    { name = "Dmitry Voronin", email = "dimka665@gmail.com" },
 ]
 license = "MIT"
 
@@ -15,8 +15,8 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "ipython>=8.39.0",
-    "pytest>=9.1.1",
+    "ipython ~= 8.39.0",
+    "pytest ~= 9.1.1",
 ]
 
 [project.scripts]
@@ -25,18 +25,18 @@ git-bump = "git_tag_bump:app"
 [tool.uv]
 preview-features = ["centralized-project-envs"]
 
-[tool.poetry-dynamic-versioning]
-enable = true
-vcs = "git"
-strict = true
-latest-tag = true
-
 [tool.hatch.version]
 source = "vcs"
-raw-options = {local_scheme = "no-local-version"}
+raw-options = { local_scheme = "no-local-version" }
 
 [build-system]
 #requires = ["poetry-core >= 1.0.0", "poetry-dynamic-versioning"]
 #build-backend = "poetry_dynamic_versioning.backend"
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "git_tag_bump.py",
+    "README.md",
+]
