@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import subprocess
 from enum import Enum
+from pathlib import Path
 
 import typer
 from dunamai import Version
@@ -9,16 +10,19 @@ from typer._click import ClickException
 
 
 class VersionPart(Enum):
+    M = 'M'
     MAJOR = 'major'
+    m = 'm'
     MINOR = 'minor'
+    p = 'p'
     PATCH = 'patch'
 
 
-def bump_version(version: Version, part: VersionPart) -> str:
+def bump_version(version: Version, bumped_part: VersionPart) -> str:
     parts = [int(base_part) for base_part in version.base.split('.')]
     # Fill list till 3 elements
     parts += [0] * (3 - len(parts))
-    match part:
+    match bumped_part:
         case VersionPart.MAJOR:
             version_str = f'{parts[0] + 1}.0'
         case VersionPart.MINOR:
@@ -26,7 +30,7 @@ def bump_version(version: Version, part: VersionPart) -> str:
         case VersionPart.PATCH:
             version_str = f'{parts[0]}.{parts[1]}.{parts[2] + 1}'
         case _:
-            raise ValueError(f'Unknown version part value: {part}')
+            raise ValueError(f'Unknown version part: {bumped_part}')
 
     if version.epoch:
         version_str = f'{version.epoch}!{version_str}'
@@ -49,14 +53,32 @@ def git_tag_new_version(tag):
     git(['tag', '--annotate', '--message', 'Version', tag])
 
 
+def git_push_tag(tag):
+    branch = git_output(['rev-parse', '--abbrev-ref', 'HEAD'])
+    try:
+        remote = git_output(['config', f'branch.{branch}.remote'])
+    except subprocess.CalledProcessError as error:
+        raise ClickException(f'Git branch `{branch}` has no remote') from error
+
+    git(['push', remote, tag])
+    rich_print(f'New tag was pushed to `{remote}`')
+
+
+def uv_build():
+    uv_build_command = ['uv', 'build', '--clear']
+    rich_print(f'Run: {" ".join(uv_build_command)}')
+    subprocess.check_call(uv_build_command)
+
+
 app = typer.Typer()
 
 
 @app.command()
 def bump(
     # ruff: ignore[function-call-in-default-argument]
-    part: VersionPart = typer.Argument(VersionPart.MINOR),
+    part: VersionPart = typer.Argument(help='Version part to bump'),
     push: bool = typer.Option(False, '--push', '-p', help='Push tag to remote repository.'),
+    build: bool = typer.Option(True, '--build/--no-build', '-b/-no-b', help='Run `uv build`'),
 ):
     version = Version.from_git(ignore_untracked=True)
 
@@ -72,14 +94,10 @@ def bump(
     rich_print(f'[green]Added tag:[/green] [bold white]{new_tag}[/bold white]')
 
     if push:
-        branch = git_output(['rev-parse', '--abbrev-ref', 'HEAD'])
-        try:
-            remote = git_output(['config', f'branch.{branch}.remote'])
-        except subprocess.CalledProcessError as error:
-            raise ClickException(f'Git branch `{branch}` has no remote') from error
+        git_push_tag(new_tag)
 
-        git(['push', remote, new_tag])
-        rich_print(f'New tag was pushed to `{remote}`')
+    if build and Path.isdir('dist'):
+        uv_build()
 
 
 if __name__ == '__main__':
