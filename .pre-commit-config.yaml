@@ -11,3 +11,8 @@ repos:
             -   id: flake8
                 additional_dependencies:
                     - flake8-broken-line==1.0.0
+
+    -   repo: https://github.com/rhysd/actionlint
+        rev: v1.7.12
+        hooks:
+            -   id: actionlint

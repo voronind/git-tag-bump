@@ -1,3 +1,4 @@
-/dist/
 /.*
+!/.github/
 __pycache__/
+/dist/
