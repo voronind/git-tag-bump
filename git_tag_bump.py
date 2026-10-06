@@ -10,12 +10,9 @@ from typer._click import ClickException
 
 
 class VersionPart(Enum):
-    M = 'M'
-    MAJOR = 'major'
-    m = 'm'
-    MINOR = 'minor'
-    p = 'p'
-    PATCH = 'patch'
+    M = 'M'     # major
+    m = 'm'     # minor
+    p = 'p'     # patch
 
 
 def bump_version(version: Version, bumped_part: VersionPart) -> str:
@@ -23,11 +20,11 @@ def bump_version(version: Version, bumped_part: VersionPart) -> str:
     # Fill list till 3 elements
     parts += [0] * (3 - len(parts))
     match bumped_part:
-        case VersionPart.MAJOR:
+        case VersionPart.M:
             version_str = f'{parts[0] + 1}.0'
-        case VersionPart.MINOR:
+        case VersionPart.m:
             version_str = f'{parts[0]}.{parts[1] + 1}'
-        case VersionPart.PATCH:
+        case VersionPart.p:
             version_str = f'{parts[0]}.{parts[1]}.{parts[2] + 1}'
         case _:
             raise ValueError(f'Unknown version part: {bumped_part}')
@@ -76,7 +73,13 @@ app = typer.Typer()
 @app.command()
 def bump(
     # ruff: ignore[function-call-in-default-argument]
-    part: VersionPart = typer.Argument(help='Version part to bump'),
+    version_part: VersionPart = typer.Argument(
+        metavar='version-part',
+        help='Version part to bump:'
+             ' [bold green]M[/bold green]ajor,'
+             ' [bold green]m[/bold green]inor'
+             ' or [bold green]p[/bold green]atch',
+    ),
     push: bool = typer.Option(False, '--push', '-p', help='Push tag to remote repository.'),
     build: bool = typer.Option(True, '--build/--no-build', '-b/-no-b', help='Run `uv build`'),
 ):
@@ -88,10 +91,10 @@ def bump(
     if version.distance == 0:
         raise ClickException(f'Commit has version tag already. Defined version: {version}')
 
-    new_tag = bump_version(version, part)
+    new_tag = bump_version(version, version_part)
 
     git_tag_new_version(new_tag)
-    rich_print(f'[green]Added tag:[/green] [bold white]{new_tag}[/bold white]')
+    rich_print(f'[green]Created tag:[/green] [bold white]{new_tag}[/bold white]')
 
     if push:
         git_push_tag(new_tag)
