@@ -63,7 +63,7 @@ def git_push_tag(tag):
 
 def uv_build():
     uv_build_command = ['uv', 'build', '--clear']
-    rich_print(f'Run: {" ".join(uv_build_command)}')
+    rich_print(f'[green]\N{Black Right-Pointing Triangle}[/green] {" ".join(uv_build_command)}')
     subprocess.check_call(uv_build_command)
 
 
@@ -99,7 +99,7 @@ def bump(
     if push:
         git_push_tag(new_tag)
 
-    if build and Path.isdir('dist'):
+    if build and Path('dist').is_dir():
         uv_build()
 
 
