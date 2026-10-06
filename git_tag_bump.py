@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import subprocess
 from enum import Enum
-from pathlib import Path
 
 import typer
 from dunamai import Version
@@ -50,23 +49,6 @@ def git_tag_new_version(tag):
     git(['tag', '--annotate', '--message', 'Version', tag])
 
 
-def git_push_tag(tag):
-    branch = git_output(['rev-parse', '--abbrev-ref', 'HEAD'])
-    try:
-        remote = git_output(['config', f'branch.{branch}.remote'])
-    except subprocess.CalledProcessError as error:
-        raise ClickException(f'Git branch `{branch}` has no remote') from error
-
-    git(['push', remote, tag])
-    rich_print(f'New tag was pushed to `{remote}`')
-
-
-def uv_build():
-    uv_build_command = ['uv', 'build', '--clear']
-    rich_print(f'[green]\N{Black Right-Pointing Triangle}[/green] {" ".join(uv_build_command)}')
-    subprocess.check_call(uv_build_command)
-
-
 app = typer.Typer()
 
 
@@ -80,8 +62,6 @@ def bump(
              ' [bold green]m[/bold green]inor'
              ' or [bold green]p[/bold green]atch',
     ),
-    push: bool = typer.Option(False, '--push', '-p', help='Push tag to remote repository.'),
-    build: bool = typer.Option(True, '--build/--no-build', '-b/-no-b', help='Run `uv build`'),
 ):
     version = Version.from_git(ignore_untracked=True)
 
@@ -95,12 +75,6 @@ def bump(
 
     git_tag_new_version(new_tag)
     rich_print(f'[green]Created tag:[/green] [bold white]{new_tag}[/bold white]')
-
-    if push:
-        git_push_tag(new_tag)
-
-    if build and Path('dist').is_dir():
-        uv_build()
 
 
 if __name__ == '__main__':

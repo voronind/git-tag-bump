@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 import typer
+from rich import print as rich_print
 from typer._click import ClickException
 
 
@@ -104,6 +105,17 @@ def git_tag_new_version(version: Version):
     git(['tag', '--annotate', '--message', 'Version', str(version)])
 
 
+def git_push_tag(tag):
+    branch = git_output(['rev-parse', '--abbrev-ref', 'HEAD'])
+    try:
+        remote = git_output(['config', f'branch.{branch}.remote'])
+    except subprocess.CalledProcessError as error:
+        raise ClickException(f'Git branch `{branch}` has no remote') from error
+
+    git(['push', remote, tag])
+    rich_print(f'New tag was pushed to `{remote}`')
+
+
 app = typer.Typer()
 
 
@@ -128,13 +140,7 @@ def bump(
 
     git_tag_new_version(version)
     if push:
-        branch = git_output(['rev-parse', '--abbrev-ref', 'HEAD'])
-        try:
-            remote = git_output(['config', f'branch.{branch}.remote'])
-        except subprocess.CalledProcessError as error:
-            raise ClickException(f'Git branch `{branch}` has no remote') from error
-
-        git(['push', remote, new_tag])
+        git_push_tag()
 
 
 if __name__ == '__main__':
